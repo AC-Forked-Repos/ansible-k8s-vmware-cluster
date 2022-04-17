@@ -1,0 +1,29 @@
+---
+# tasks file to generate ssh key pair
+
+- name: "Generate an OpenSSH keypair {{ target_key_path }}/{{ target_key_name }} on {{ target_host }}"
+  community.crypto.openssh_keypair:
+    owner: "{{ target_user_name }}"
+    comment: "{{ target_key_comment }}"
+    path: "{{ target_key_path }}/{{ target_key_name }}"
+    type: "{{ target_key_type }}"
+    size: "{{ target_key_size }}"
+    passphrase: "{{ target_key_passphrase }}"
+    force: true
+  when: "{{ inventory_hostname == target_host }}"
+    
+- name: "Change file ownership, group and permissions for private key"
+  ansible.builtin.file:
+    path: "{{ target_key_path }}/{{ target_key_name }}"
+    owner: "{{ target_user_name }}"
+    group: "{{ target_user_name }}"
+    mode: u=rw
+  when: "{{ inventory_hostname == target_host }}"
+
+- name: "Change file ownership, group and permissions for public key"
+  ansible.builtin.file:
+    path: "{{ target_key_path }}/{{ target_key_name }}.pub"
+    owner: "{{ target_user_name }}"
+    group: "{{ target_user_name }}"
+    mode: u=rw,g=r,o=r
+  when: "{{ inventory_hostname == target_host }}"

@@ -1,0 +1,15 @@
+---
+# Deploy Terraform
+
+- name: "Deploy Terraform"
+  hosts: admin-server
+  become: yes
+  gather_facts: true
+  vars:
+    go_folder: "/usr/local/go"
+    go_archive: "https://go.dev/dl/go1.17.6.linux-amd64.tar.gz"
+
+  roles:
+    - role: "go/go-install"
+    - role: "terraform/terraform-install"
+

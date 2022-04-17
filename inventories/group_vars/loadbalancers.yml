@@ -1,0 +1,10 @@
+---
+# Ha-Proxy parameters
+haproxy_stats_port: 9000
+haproxy_stats_endpoint: /stats
+haproxy_user_login: ansible
+haproxy_user_password: ansible
+
+# Keepalived parameters
+keepalived_interface: ens160
+keepalived_virtual_broadcast: 10.1.55.255

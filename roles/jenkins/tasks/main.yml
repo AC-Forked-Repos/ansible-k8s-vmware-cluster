@@ -1,0 +1,38 @@
+---
+# tasks file for jenkins
+
+- name: "Clone Jenkins repository"
+  git:
+    repo: https://github.com/scriptcamp/kubernetes-jenkins
+    dest: /etc/jenkins
+
+- name: "Create devops-tools namespace"
+  command:
+    cmd: kubectl apply -f namespace.yaml
+    chdir: /etc/jenkins
+
+- name: "Create service account"
+  command:
+    cmd: kubectl apply -f serviceAccount.yaml
+    chdir: /etc/jenkins
+
+- name: "Create persistent volume for Jenkins"
+  command:
+    cmd: kubectl apply -f volume.yaml
+    chdir: /etc/jenkins
+
+- name: "Create deployment for Jenkins"
+  command:
+    cmd: kubectl apply -f deployment.yaml
+    chdir: /etc/jenkins
+
+- name: "Generate Jenkins service configuration"
+  template:
+    src: service.yaml
+    dest: /etc/jenkins/service.yaml
+
+- name: "Create service for Jenkins"
+  command:
+    cmd: kubectl apply -f service.yaml
+    chdir: /etc/jenkins
+

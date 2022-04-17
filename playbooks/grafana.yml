@@ -1,0 +1,9 @@
+---
+# Deploy Grafana 
+
+- name: "Deploy Grafana"
+  hosts: k8s-admin
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "grafana/grafana-install"

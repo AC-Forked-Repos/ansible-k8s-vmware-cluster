@@ -1,0 +1,9 @@
+---
+# tasks file for hosts-add-host
+
+- name: "Add {{ host_hostname }}.{{domain_name}} with {{ host_ip }} in hosts file"
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ host_ip }} {{ host_hostname }}.{{domain_name}} {{ host_hostname }}"
+    create: yes
+

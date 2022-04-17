@@ -1,0 +1,27 @@
+---
+# tasks file for kubernetes installation
+
+
+- name: Install Kubernetes packages
+  package:
+    name: [ 'kubelet', 'kubeadm' ]
+    state: latest
+
+#- name: Prevent Kubernetes from being upgraded
+#  dpkg_selections:
+#    name: kubelet
+#    selection: hold
+
+- name: Configure node ip
+  lineinfile:
+    path: /etc/default/kubelet
+    line: KUBELET_EXTRA_ARGS=--node-ip={{ ansible_default_ipv4.address }}
+    create: yes
+
+- name: Restart kubelet
+  service:
+    name: kubelet
+    daemon_reload: yes
+    state: restarted
+
+

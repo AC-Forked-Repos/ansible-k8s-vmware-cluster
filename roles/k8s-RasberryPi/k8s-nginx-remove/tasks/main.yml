@@ -1,0 +1,19 @@
+---
+# Install NGINX ingress controller
+
+
+- name: "Delete the nginx-ingress namespace to uninstall the Ingress controller along with all the auxiliary resources that were created"
+  command:
+    cmd: kubectl delete namespace nginx-ingress
+
+- name: "Delete the ClusterRole"
+  command:
+    cmd: kubectl delete clusterrole nginx-ingress
+
+- name: "Delete the ClusterRoleBinding"
+  command:
+    cmd: kubectl delete clusterrolebinding nginx-ingress
+
+- name: "Delete the Custom Resource Definitions and remove all associated Custom Resources"
+  command:
+    cmd: kubectl delete -f common/crds/

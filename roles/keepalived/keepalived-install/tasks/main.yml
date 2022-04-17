@@ -1,0 +1,53 @@
+---
+# tasks file for keepalived-install
+- name: "Install keepalive package"
+  package:
+    name: keepalived
+    state: latest
+
+- name: "Create keepalived_script user"
+  ansible.builtin.user:
+    name: keepalived_script
+    comment: Keepalived user
+    create_home: no
+    system: yes
+    state: present
+
+- name: "Set net.ipv4.ip_nonlocal_bind in sysctl.conf"
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_nonlocal_bind
+    value: '1'
+    state: present
+    reload: no
+
+- name: "Set net.ipv4.conf.all.arp_announce in sysctl.conf"
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.all.arp_announce
+    value: '2'
+    state: present
+    reload: no
+
+- name: "Set net.ipv4.conf.all.arp_ignore in sysctl.conf"
+  ansible.posix.sysctl:
+    name: net.ipv4.conf.all.arp_ignore
+    value: '1'
+    state: present
+    reload: no
+
+- name: "Set net.ipv4.ip_forward in sysctl.conf"
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    reload: yes
+
+- name: "Generate /etc/keepalived/keepalived.conf {{ 'MASTER' if inventory_hostname[-1:] == '1' else 'BACKUP' }} file"
+  template: 
+    src: ../templates/keepalived-conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+    force: yes
+
+

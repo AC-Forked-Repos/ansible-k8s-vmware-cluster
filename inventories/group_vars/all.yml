@@ -1,0 +1,64 @@
+---
+
+# Global parameters
+domain_name: hawkfund.kr
+admin_hostname: admin-server
+admin_username: ansible
+admin_key_path: "/home/ansible/.ssh"
+admin_key_type: ed25519
+admin_description: "Ansible user"
+
+# The user that create VM
+infra_admin: yido
+
+ntp_host: admin-server
+ntp_network_timezone: Europe/Paris
+ntp_network_ip_range: 10.1.55.00/24
+
+# Docker parameters
+docker_version: 20.10.12
+docker_user: ansible
+
+# Kubernetes parameters
+kubernetes_version: v1.23.3
+kubeadm_version: 1.23.3
+kubernetes_user: ansible
+kubernetes_cluster_label: k8s-hawkfund-prod
+
+# Kubernetes admin hostname for CLI
+kubernetes_admin_hostname: admin-server
+kubernetes_admin_ip: 10.1.55.11
+
+# Kubernetes firts master to get token and configurations
+kubernetes_certificates_server: k8s-etcd-01
+kubernetes_first_master_hostname: k8s-master-01
+kubernetes_first_etcd_hostname: k8s-etcd-01
+kubernetes_first_etcd_ip: 10.1.55.41
+
+# ETCD load balancer
+kubernetes_etcd_vip_hostname: k8s-etcd-lb-vip
+kubernetes_etcd_vip_ip: 10.1.55.40
+kubernetes_etcd_peer_port: 2380
+kubernetes_etcd_client_port: 2379
+
+# API load balancer
+kubernetes_api_vip_hostname: k8s-api-lb-vip
+kubernetes_api_vip_ip: 10.1.55.20
+kubernetes_api_port: 6443
+
+
+kubernetes_http_port: 80
+kubernetes_https_port: 443
+kubernetes_ssh_port: 2222
+
+# Network Calico parameters 
+kubernetes_pod_subnet: "192.168.0.0/16"
+
+# MetalLB Cluster load balancer
+kubernetes_metallb_range: 10.1.55.100-10.1.55.110
+
+# Prometheus
+prometheus_admin_ip: 10.1.55.14
+prometheus_admin_port: 9090
+prometheus_target_port: 9100
+prometheus_directory: /etc/prometheus

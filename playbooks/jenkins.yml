@@ -1,0 +1,9 @@
+---
+# Deploy Jenkins
+
+- name: "Deploy Jenkins on k8s"
+  hosts: k8s-admin
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "jenkins"

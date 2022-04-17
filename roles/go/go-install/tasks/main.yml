@@ -1,0 +1,15 @@
+---
+# tasks file for go-install
+
+ - name: "Remove old Go version in {{ go_folder }}"
+   file:
+     path: "{{ go_folder }}"
+     state: absent
+
+
+- name: "Get and deploy {{ go_archive }}"
+  unarchive:
+    src: "{{ go_archive }}"
+    dest: /usr/local
+    remote_src: yes
+

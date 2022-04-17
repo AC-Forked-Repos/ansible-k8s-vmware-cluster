@@ -1,0 +1,53 @@
+127.0.0.1 localhost
+{% if inventory_hostname in groups['nfs_servers'] %}
+127.0.1.1 {{ inventory_hostname }}.{{ domain_name }} {{ inventory_hostname }}
+{% endif %}
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+
+##################################################################### UNGROUPED
+{% for host in groups['ungrouped'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+############################################################ API LOAD BALANCERS
+10.1.55.20 k8s-api-lb-vip.hawkfund.kr k8s-api-lb-vip
+{% for host in groups['api_loadbalancers'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+############################################################ ETCDLOAD BALANCERS
+10.1.55.40 k8s-etcd-lb-vip.hawkfund.kr k8s-etcd-lb-vip
+{% for host in groups['etcd_loadbalancers'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+####################################################################### MASTERS
+{% for host in groups['masters'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+######################################################################### ETCDS
+{% for host in groups['etcds'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+####################################################################### WORKERS
+{% for host in groups['workers'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+################################################################### NFS SERVERS
+{% for host in groups['nfs_servers'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}
+
+####################################################################### SERVERS
+{% for host in groups['servers'] %}
+{{ hostvars[host]['ansible_default_ipv4']['address'] }} {{ hostvars[host]['ansible_hostname'] }}.{{ domain_name }} {{ hostvars[host]['ansible_hostname'] }}
+{% endfor %}

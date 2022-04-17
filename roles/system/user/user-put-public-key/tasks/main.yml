@@ -1,0 +1,15 @@
+---
+# tasks file for user-put-public-key
+
+- name: "Remove Old key "
+  ansible.builtin.lineinfile:
+    path: "{{ target_key_path }}/authorized_keys"
+    state: absent
+    regexp: '^(.*){{ target_key_comment }}(.*)$'
+
+- name: "Set authorized key  for {{ target_user_name }}"
+  authorized_key:
+    user: "{{ target_user_name }}"
+    state: present
+    key: 'from="{{ target_key_from }}" {{ target_public_key }}'
+    path: "{{ target_key_path }}/authorized_keys"

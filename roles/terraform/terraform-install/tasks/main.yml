@@ -1,0 +1,33 @@
+---
+# tasks file for terraform-install
+
+- name: "Add Terraform repository key"
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+
+- name: "Add Terraform repository"
+  apt_repository:
+    repo: deb [arch=amd64] https://apt.releases.hashicorp.com "{{ ansible_distribution_release }}" main
+    state: present
+    filename: terraform
+    update_cache: yes
+
+- name: "Install Terraform"
+  package:
+    name: terraform
+    state: latest
+
+- name: "Create Terraform group"  
+  group:    
+    name: terraform    
+    system: yes
+
+- name: "Create Terraform user"  
+  user:    
+    name: terraform 
+    group: terraform 
+    system: yes    
+    create_home: yes
+    comment: Terraform user account
+

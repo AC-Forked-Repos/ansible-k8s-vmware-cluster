@@ -1,0 +1,20 @@
+---
+# Generate ETCD Certificate Autority for all nodes
+
+
+################################################################### GENERATE CA
+- name: "Generate ETCD certifications etcd-ca"
+  command: kubeadm init phase certs etcd-ca
+
+
+#################################################################### FECH FILES
+- name: "Fetch ca.crt for ETCD nodes, {{ kubernetes_first_master_hostname }} and  {{ admin_hostname }}"
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/pki/etcd/ca.crt
+    dest: "/tmp/{{ item }}/pki/etcd/ca.crt"
+    flat: yes
+  with_items:
+    - "{{ groups['etcds'] }}"
+    - "{{ kubernetes_first_master_hostname }}"
+    - "{{ admin_hostname }}"
+

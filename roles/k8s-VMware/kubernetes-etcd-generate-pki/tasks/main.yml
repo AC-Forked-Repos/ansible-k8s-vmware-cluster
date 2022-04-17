@@ -1,0 +1,73 @@
+---
+# Generate PKI for all nodes an pull in /tmp/hostname directory in admin-server
+
+########################################################################## INIT
+- name: "Assume destination directory exist for"
+  file:
+    path: "/tmp/{{ item }}/pki/etcd"
+    state: directory
+  with_items:  
+    - "{{ groups['etcds'] }}"
+    - "{{ kubernetes_first_master_hostname }}"
+    - "{{ admin_hostname }}"
+
+- name: "Create ETCD pki directory"
+  file:
+    path: "/etc/kubernetes/pki/etcd"
+    state: directory
+
+
+################################################################ GENERATE CERTS
+- name: "Generate etcd-server certificate"
+  shell: |
+    kubeadm init phase certs etcd-server --config=/tmp/"{{ item }}"/kubeadm-etcd-config.yml
+    mv /etc/kubernetes/pki/etcd/server.* /tmp/"{{ item }}"/pki/etcd/
+  loop: "{{ groups['etcds'] }}"
+
+- name: "Generate etcd-peer certificate"
+  shell: |
+    kubeadm init phase certs etcd-peer --config=/tmp/{{ item }}/kubeadm-etcd-config.yml
+    mv /etc/kubernetes/pki/etcd/peer.* /tmp/"{{ item }}"/pki/etcd/
+  loop: "{{ groups['etcds'] }}"
+
+- name: "Generate etcd-healthcheck-client certificate"
+  shell: |
+    kubeadm init phase certs etcd-healthcheck-client --config=/tmp/{{ item }}/kubeadm-etcd-config.yml
+    mv /etc/kubernetes/pki/etcd/healthcheck-client.* /tmp/"{{ item }}"/pki/etcd/
+  loop: "{{ groups['etcds'] }}"
+
+- name: "Generate apiserver-etcd-client certificate"
+  shell: |
+    kubeadm init phase certs apiserver-etcd-client --config=/tmp/{{ item }}/kubeadm-etcd-config.yml
+    mv /etc/kubernetes/pki/apiserver-etcd-client.* /tmp/"{{ item }}"/pki/
+  loop:  "{{ groups['etcds'] }}"
+
+
+#################################################### FECH CERTS TO ADMIN-SERVER
+- name: "Fetch PKI for ETCD nodes"
+  ansible.builtin.fetch:
+    src: /tmp/{{ item[1] }}/pki/{{ item[0] }}
+    dest: /tmp/{{ item[1] }}/pki/{{ item[0] }}
+    flat: yes
+  with_nested:
+    - "{{ ['apiserver-etcd-client.crt', 'apiserver-etcd-client.key','etcd/healthcheck-client.crt','etcd/healthcheck-client.key','etcd/peer.crt','etcd/peer.key','etcd/server.crt','etcd/server.key']}}"
+    - "{{ groups['etcds'] }}"
+
+- name: "Fetch PKI for {{ kubernetes_first_master_hostname }}"
+  ansible.builtin.fetch:
+    src: "/tmp/{{ kubernetes_certificates_server }}/pki/{{ item }}"
+    dest: "/tmp/{{ kubernetes_first_master_hostname }}/pki/{{ item}}"
+    flat: yes
+  with_items:
+    - "apiserver-etcd-client.crt"
+    - "apiserver-etcd-client.key"
+
+- name: "Fetch PKI for {{ admin_hostname }}"
+  ansible.builtin.fetch:
+    src: "/tmp/{{ kubernetes_certificates_server }}/pki/{{ item }}"
+    dest: "/tmp/{{ admin_hostname }}/pki/{{ item}}"
+    flat: yes
+  with_items:
+    - "apiserver-etcd-client.crt"
+    - "apiserver-etcd-client.key"
+

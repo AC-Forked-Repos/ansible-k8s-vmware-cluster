@@ -1,0 +1,20 @@
+---
+# Install MetalLB on Kubernetes cluster
+
+- name: "Create metallb-system namespace"
+  command:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/namespace.yaml
+
+- name: "Create MetalLB with manifest"
+  command:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/metallb.yaml
+
+- name: "Generate metallb-config.yaml"
+  template:
+    src: metallb-config.j2
+    dest: "/tmp/{{ inventory_hostname }}/metallb-config.yaml"
+
+- name: "Setup MetalLB"
+  command:
+    cmd: kubectl apply -f "/tmp/{{ inventory_hostname }}/metallb-config.yaml"
+

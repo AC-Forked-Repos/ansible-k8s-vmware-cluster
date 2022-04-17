@@ -1,0 +1,23 @@
+---
+# tasks install NFS client
+
+- name: "Install nfs-common package"
+  package:
+    name: nfs-common
+    state: latest
+    update_cache: true
+
+# tasks mount an NFS volume
+- name: "Mount {{ nfs_src_directory }} NFS volume"
+  mount:
+    src: "{{ nfs_server_ip }}:{{ nfs_server_shared }}"
+    path: "{{ nfs_client_dest_directory }}"
+    opts: "{{ nfs_client_opts | default('ro,sync,hard,intr,_netdev') }}"
+    state: mounted
+    fstype: nfs
+
+- name: "Ensure {{ nfs_client_dest_directory }}/{{ inventory_hostname }} exist"
+  file:
+    path: "{{ nfs_client_dest_directory }}/{{ inventory_hostname }}"
+    state: directory
+    mode: 0777

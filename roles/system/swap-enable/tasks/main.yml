@@ -1,0 +1,10 @@
+---
+# tasks file to enable swap
+- name: "Reenable SWAP in fstab"
+  replace:
+    path: /etc/fstab
+    regexp: '^# (.+?\sswap\s+sw\s+.*)$'
+    replace: '\1'
+
+- name: "Disable swap"
+  command: swapon

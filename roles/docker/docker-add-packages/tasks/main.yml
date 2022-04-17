@@ -1,0 +1,9 @@
+---
+# tasks file for Docker packages install
+
+- name: Install Docker packages
+  package: 
+    name: [ 'docker-ce', 'docker-ce-cli', 'containerd.io' ]
+    state: latest
+
+

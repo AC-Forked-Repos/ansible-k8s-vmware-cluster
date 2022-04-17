@@ -1,0 +1,83 @@
+---
+# tasks file for kubernetes-masters-setup
+
+- name: "Install Kubernetes packages"
+  package:
+    name: [ 'kubelet', 'kubeadm', 'kubectl', 'kubernetes-cni' ]
+    state: latest
+
+- name: "Reset kubeadm if present"
+  shell: kubeadm reset -f
+  register: kubeadm_reset
+
+- name: ".kube directory creation"
+  file:
+    path: /home/ansible/.kube
+    state: directory
+    mode: 0755
+
+- name: "Generate 20-etcd-service-manager.conf"
+  template:
+    src: 20-etcd-service-manager.j2
+    dest: /etc/systemd/system/kubelet.service.d/20-etcd-service-manager.conf
+
+- name: "Restart kubelet"
+  systemd:
+    name: kubelet
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+
+- name: "TMP directory creation"
+  file:
+    path: "/tmp/{{ inventory_hostname }}"
+    state: directory
+    mode: 0755
+
+- name: "Generate kubeadm-config.yml"
+  template:
+    src: kubeadm-cfg.j2
+    dest: "/tmp/{{ inventory_hostname }}/kubeadm-cfg.yml"
+
+
+- name: "Genarate ETCD certifications"
+  command: kubeadm init phase certs etcd-ca
+
+- command: "kubeadm init phase certs etcd-server --config=/tmp/{{ inventory_hostname }}/kubeadm-cfg.yml" 
+- command: "kubeadm init phase certs etcd-peer --config=/tmp/{{ inventory_hostname }}/kubeadm-cfg.yml" 
+- command: "kubeadm init phase certs etcd-healthcheck-client --config=/tmp/{{ inventory_hostname }}/kubeadm-cfg.yml" 
+- command: "kubeadm init phase certs etcd-etcd-client --config=/tmp/{{ inventory_hostname }}/kubeadm-cfg.yml" 
+
+
+- name: "Generate kubeadm token"
+  command: kubeadm token generate
+  register: token_generation
+  when: inventory_hostname == 'k8s-master-01'
+ 
+- set_fact:
+    kubeadm_token: "{{ token_generation.stdout }}"
+
+
+- debug:
+    msg: "{{ kubeadm_token }}"
+
+- name: "Setup kubeadm for master"
+  shell: kubeadm init --config="/tmp/{{ inventory_hostname }}/kubeadm-cfg.yml"
+
+#- name: "Setup kubeadm for master"
+#  shell: kubeadm ini --apiserver-advertise-address=10.1.33.21 --token="{{ kubeadm_token }}" --pod-*network-cidr="{{ kubernetes_pod_subnet }}"
+#  register: kubeadm_init
+#  when: kubeadm_reset is succeeded
+
+
+#- name: "Generate /etc/kubernetes/admin.conf"
+#  copy:
+#    src: /etc/kubernetes/admin.conf
+#    dest: "{{ root_home.stdout }}/.kube/config"
+#    owner: root
+#    group: root
+#    mode: 0600
+#    remote_src: yes
+#    backup: yes
+#  when: kubeadm_init
+

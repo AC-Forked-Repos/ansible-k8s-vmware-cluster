@@ -1,0 +1,41 @@
+---
+# tasks file for kubernetes-masters-setup
+
+- name: "Reset kubeadm if present"
+  shell: kubeadm reset -f
+  register: kubeadm_reset
+
+- name: "Set kubeadm cgroupfs in config file"
+  lineinfile:
+    path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    line: Environment="cgroup-driver=systemd/cgroup-driver=cgroupfs"
+    state: present
+
+- name: "Create Kubernetes ETCD folders"
+  file:
+    path: /etc/kubernetes/pki/etcd
+    state: directory
+    owner: root
+    group: root
+    mode: '0640'
+
+- name: "Push Kubernetes Master PKI files to master replicas"
+  copy: 
+    src: "/tmp/{{ kubernetes_first_master_dns }}/"
+    dest: /etc/kubernetes/
+    owner: root
+    group: root
+    mode: preserve
+
+- name: "Generate join token"
+  shell: kubeadm token create --print-join-command
+  register: kubeadm_join_cmd
+  delegate_to: "{{ kubernetes_first_master_dns }}"
+
+- set_fact:
+    kubeadm_join: "{{ kubeadm_join_cmd.stdout }}"
+
+- name: "Join Master replicas to cluster"
+  shell: "{{ kubeadm_join }} --control-plane"
+
+

@@ -1,0 +1,46 @@
+---
+# tasks install NFS server
+
+- name: "Install nfs-server package"
+  package:
+    name: nfs-server
+    state: latest
+    update_cache: true
+
+- name: "Ensure {{ nfs_srv_folder }} exist"
+  file:
+    path: "{{ nfs_srv_folder | default('/srv') }}"
+    state: directory
+    owner: "{{ nfs_export_owner | default('root') }}"
+    group: "{{ nfs_export_group | default('root') }}"
+    mode: "{{ nfs_export_mode | default('0700') }}"
+
+- name: "Ensure {{ nfs_export_folder }} exist"
+  file:
+    path: "{{ nfs_export_folder | default('/export') }}"
+    state: directory
+    owner: "{{ nfs_export_owner | default('root') }}"
+    group: "{{ nfs_export_group | default('root') }}"
+    mode: "{{ nfs_export_mode | default('0700') }}"
+
+- name: "Mount {{ nfs_device}} on {{ nfs_srv_folder }}"
+  mount:
+    path: "{{ nfs_srv_folder }}"
+    src: "{{ nfs_device }}"
+    fstype: ext4
+    opts: "{{ nfs_mount_options | default('ro,bind') }}"
+    state: present
+
+- name: "Bind mount {{ nfs_srv_folder }} on {{ nfs_export_folder }}"
+  mount:
+    path: "{{ nfs_export_folder }}"
+    src: "{{ nfs_srv_folder }}"
+    fstype: none
+    opts: bind
+    state: mounted
+
+- name: "Restart NFS service"
+  systemd:
+    name: nfs-server
+    daemon-reload: yes
+    state: started

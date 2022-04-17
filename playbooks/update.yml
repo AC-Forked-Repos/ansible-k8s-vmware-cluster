@@ -1,0 +1,10 @@
+---
+# Update and upgrade system Playbook
+- name: "System update and upgrade"
+  hosts: all
+  vars:
+    upgrade_type: safe
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/update"

@@ -1,0 +1,22 @@
+---
+# Kubernetes nodes packages install tasks
+
+- name: "Install Kubernetes packages for nodes"
+  package:
+    name: ['kubelet', 'kubeadm', 'kubernetes-cni' ]
+    state: latest
+    update_cache: true
+
+- name: "Install kubectl package for masters"
+  package:
+    name: ['kubectl']
+    state: latest
+    update_cache: true
+  when: inventory_hostname in groups['masters']
+
+- name: "Install ETCD package for ETCD nodes"
+  package:
+    name: ['etcd']
+    state: latest
+    update_cache: true
+  when: inventory_hostname in groups['etcds']

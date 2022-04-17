@@ -1,0 +1,7 @@
+---
+# Playbook to get all Rasberry temperature
+- name: "Rasberry Pi get temperature"
+  hosts: all
+  gather_facts: false
+  roles:
+    - role: "rasberry/rasberry-get-temp"

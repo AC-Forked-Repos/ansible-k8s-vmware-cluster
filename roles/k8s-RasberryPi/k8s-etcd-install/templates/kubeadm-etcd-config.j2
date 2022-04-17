@@ -1,0 +1,48 @@
+# {{ ansible_managed }}
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+#kubernetesVersion: "{{ kubernetes_version }}"
+etcd:
+  local:
+    serverCertSANs:
+    - "{{ inventory_hostname }}"
+    peerCertSANs:
+    - "{{ inventory_hostname }}"
+    extraArgs:
+      initial-cluster: "{{ etcd_infra_list }}"
+      initial-cluster-state: new
+      name: "INFRA-{{ inventory_hostname[-2:] }}"
+      listen-peer-urls: "https://{{ inventory_hostname }}:2380"
+      listen-client-urls: "https://{{ inventory_hostname }}:2379"
+      advertise-client-urls: "https://{{ inventory_hostname }}:2379"
+      initial-advertise-peer-urls: "https://{{ inventory_hostname }}:2380"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+apiServer:
+  certSANs:
+  - "{{ kubernetes_loadbalanced_dns }}"
+controlPlaneEndpoint: "{{ kubernetes_loadbalanced_dns }}:{{ kubernetes_loadbalancer_api_port }}"
+networking:
+  serviceSubnet: "{{ kubernetes_pod_subnet }}"
+clusteName: "{{ kubernetes_cluster_label }}"

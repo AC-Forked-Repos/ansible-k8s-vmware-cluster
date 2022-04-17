@@ -1,0 +1,7 @@
+---
+
+# tasks file to get Rasberry temperature
+- name: "Get Rasberry temperature"
+  debug: 
+    msg: "{{item[:2]}},{{item[-3:]}}C"
+  with_file: /sys/class/thermal/thermal_zone0/temp

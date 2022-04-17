@@ -1,0 +1,23 @@
+---
+# tasks file to set NTP server
+- name: Set NTP server IP ntp-server-ip
+  lineinfile:
+    path: /etc/systemd/timesyncd.conf
+    regexp: "FallbackNTP"
+    line: FallbackNTP={{ ntp_server_ip }}
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Set timezone to network_timezone
+  timezone:
+    name: "{{ network_timezone }}"
+
+- name: Enable NTP server
+  command:
+    timedatectl set-ntp true
+
+- name: Restart systemd-timesyncd
+  systemd:
+    name: systemd-timesyncd
+    state: restarted

@@ -1,0 +1,18 @@
+---
+# Kubernetes k8s installation on VMware VM Playbook
+
+- name: "Remove ETCD"
+  hosts: [etcds]
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-VMware/kubernetes-etcd-remove"
+
+- name: "Remove Kubernetes"
+  hosts: nodes
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-VMware/kubernetes-kubelet-remove"
+
+

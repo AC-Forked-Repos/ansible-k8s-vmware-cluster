@@ -1,0 +1,17 @@
+---
+# Set Cgroupfs and container runtime for kubelet
+
+- name: "Configure Cgroup driver and container runtime"
+  lineinfile:
+    path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    insertafter: 'Environment="KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml"'
+    line: Environment="KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --container-runtime=docker"
+    state: present
+    firstmatch: yes
+
+- name: "Reload Kubelet service service"
+  ansible.builtin.systemd:
+    name: kubelet
+    state: restarted
+    daemon_reload: yes
+    enabled: yes

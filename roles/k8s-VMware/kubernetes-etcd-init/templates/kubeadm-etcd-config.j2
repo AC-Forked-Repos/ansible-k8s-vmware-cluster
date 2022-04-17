@@ -1,0 +1,26 @@
+# {{ ansible_managed }}
+# etcd_nodename : hostname of the etcd node
+# etcd_nodeip : ip of the etcd node
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+etcd:
+  local:
+    serverCertSANs:
+    - "{{ etcd_nodeip }}"
+    - "{{ etcd_nodename }}"
+    - "{{ etcd_nodename }}.{{ domain_name }}"
+    - "{{ kubernetes_etcd_vip_ip }}"
+    - "{{ kubernetes_etcd_vip_hostname }}"
+    - "{{ kubernetes_etcd_vip_hostname }}.{{ domain_name }}"
+    peerCertSANs:
+    - "{{ etcd_nodeip }}"
+    - "{{ etcd_nodename }}"
+    - "{{ etcd_nodename }}.{{ domain_name }}"
+    extraArgs:
+      name: "etcd{{ etcd_nodename[-3:] }}"
+      initial-cluster-state: new
+      initial-cluster: "{{ etcd_initial_cluster }}"
+      listen-peer-urls: "https://{{ etcd_nodeip }}:{{ kubernetes_etcd_peer_port }}"
+      initial-advertise-peer-urls: "https://{{ etcd_nodeip }}:{{ kubernetes_etcd_peer_port }}"
+      listen-client-urls: "https://{{ etcd_nodeip }}:{{ kubernetes_etcd_client_port }},https://127.0.0.1:{{ kubernetes_etcd_client_port }}"
+      advertise-client-urls: "https://{{ etcd_nodeip }}:{{ kubernetes_etcd_client_port }}"

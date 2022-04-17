@@ -1,0 +1,8 @@
+---
+# Install common packages tasks
+
+- name: "Install common packages"
+  package:
+    name: [ 'apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release' ]
+    state: latest
+    update_cache: true

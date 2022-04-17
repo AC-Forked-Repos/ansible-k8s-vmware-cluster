@@ -1,0 +1,27 @@
+---
+# tasks file to install CHRONY NTP server
+
+- name: Set timezone to network_timezone
+  timezone:
+    name: "{{ network_timezone }}"
+  notify: restart crond
+
+
+- name: CHRONY package install
+  package:
+    name: chrony
+    state: latest
+    update_cache: yes
+
+    
+- name: CHRONY configuration
+  lineinfile:
+    path: /etc/chrony/chrony.conf
+    line: allow {{ network_ip_range }}
+    create: yes
+
+- name: Start and set enable CHRONY daemond
+  service:
+    name: chrony
+    state: started
+    enabled: yes

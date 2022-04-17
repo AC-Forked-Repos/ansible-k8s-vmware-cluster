@@ -1,0 +1,17 @@
+---
+# k9s install 
+
+- name: "Clone repository"
+  git:
+    repo: https://github.com/derailed/k9s.git
+    dest: /usr/src/k9s
+
+- name: "Goland install"
+  apt:
+    name: golang-go
+    state: latest
+
+- name: "Build installation"
+  command: make build
+  args:
+    chdir: /usr/src/k9s

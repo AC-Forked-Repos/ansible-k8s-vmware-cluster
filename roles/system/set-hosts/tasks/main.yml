@@ -1,0 +1,10 @@
+---
+# tasks file to set hosts file
+
+- name: "Generate temporary hosts list file"
+  template:
+    src: ../templates/hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: 0644

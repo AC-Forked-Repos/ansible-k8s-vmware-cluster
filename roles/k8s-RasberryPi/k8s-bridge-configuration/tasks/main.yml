@@ -1,0 +1,26 @@
+---
+# Letting iptables see bridged traffic tasks
+
+- name: "Bridge IPv4 configuration"
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    state: present
+
+- name: "Bridge IPv6 configuration"  
+  sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: 1
+    state: present
+
+- name: "Enable ip forwarding on IPv4 and reload if necessary"
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+
+
+

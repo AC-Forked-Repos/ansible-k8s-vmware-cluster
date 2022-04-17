@@ -1,0 +1,8 @@
+---
+# ETCD packages install tasks
+
+- name: "Install Kubernetes packages for nodes"
+  package:
+    name: [ 'etcd' ]
+    state: latest
+    update_cache: true

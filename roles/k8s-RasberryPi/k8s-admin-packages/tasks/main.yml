@@ -1,0 +1,8 @@
+---
+# Kubernetes admin packages install task
+
+- name: "Install Kubernetes packages for admin"
+  package:
+    name: [ 'kubectl' ]
+    state: latest
+    update_cache: true

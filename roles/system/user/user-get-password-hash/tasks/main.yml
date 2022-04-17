@@ -1,0 +1,11 @@
+---
+# tasks file for user-get-password-hash
+- name: "Get password hash for {{ target_user_name }} on {{ target_host }}"
+  register: target_user_password
+  raw: cat /etc/shadow | grep "{{ target_user_name }}" | cut -d':' -f2
+  when: inventory_hostname == target_host
+
+- name: "Record fact"
+  set_fact:
+    target_user_password: "{{ target_user_password.stdout | regex_replace('[\\r\\n\\t]+','')}}"
+  when: inventory_hostname == target_host

@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+bootstrapTokens:
+- token: "{{ kubeadm_token }}"
+  description: "default kubeadm bootstrap token"
+  ttl: 24h0m0s
+localAPIEndpoint:
+  advertiseAddress: "{{ load_balancer_ip }}"
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+etcd:
+  local:
+  certSANs:
+  - "{{ inventory_hostname }}"
+  peerCertSANs:
+  - "{{ inventory_hostname }}"
+  extraArgs:
+    initial-cluster: infra1=https://10.1.33.21:2380,infra2=https://10.1.33.22:2380,infra3=https://10.1.33.23:2380   
+    initial-cluster-state: new
+    name: pedsf-cluster
+    listen-peer-urls: "https://{{ inventory_hostname }}:2380"
+    listen-client-urls: "https://{{ inventory_hostname }}:2379"
+    advertise-client-urls: "https://{{ inventory_hostname }}:2379"
+    initial-advertise-peer-urls: "https://{{ inventory_hostname }}:2380"
+networking:
+  serviceSubnet: "{{ kubernetes_pod_subnet }}"

@@ -1,0 +1,46 @@
+---
+# tasks file for prometheus
+
+- name: "Create Prometheus folder"
+  file:
+    path: "{{ prometheus_directory }}"
+    state: directory
+
+- name: "Create Prometheus folder"
+  file:
+    path: /var/lib/prometheus
+    state: directory
+
+- name: "Download and uncompress Prometheus archive"
+  unarchive:
+    src: "{{ prometheus_url }}"  
+    dest: "{{ prometheus_directory }}"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: "Add configuration file"
+  template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    mode: 0644
+    owner: root
+    group: root
+
+- name: "Generate prometheus.service"
+  template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+
+- name: "Reload Prometheus service"
+  service:
+    name: prometheus.service
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+
+#- name: "Create Prometheus group"  group:    name: prometheus    system: yes
+
+#- name: "Create Prometheus user"  user:    name: prometheus    group: prometheus    system: yes    create_home: false    comment: Prometheus user account
+
+
+

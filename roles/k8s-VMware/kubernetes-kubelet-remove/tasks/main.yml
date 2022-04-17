@@ -1,0 +1,27 @@
+---
+# Remove Kubelet and all Kubernetes remaining
+
+- name: "Stop Kubelet service service"
+  ansible.builtin.systemd:
+    name: kubelet
+    state: stopped
+    enabled: no
+
+- name: "Remove Kubelet service directory"
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/etc/systemd/system/kubelet.service.d"
+    - "/var/lib/kubelet/"
+    - "/etc/default/kubelet"
+    - "/etc/kubernetes"
+
+- name: "Remove Kubernetes packages"
+  package:
+    name: ['kubelet', 'kubectl', 'kubeadm', 'kubernetes-cni' ]
+    state: absent
+    purge: yes
+    autoremove: yes
+    autoclean: yes
+    update_cache: true

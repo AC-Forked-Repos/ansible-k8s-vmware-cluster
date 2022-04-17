@@ -1,0 +1,25 @@
+---
+# Reset ansible user key pair Playbook
+# 
+# ansible-playbook -K playbooks/user-ansible-key-reload.yml
+
+
+- name: "Get user password hash and public key"
+  hosts: [admin-server,cluster]
+  vars:
+    target_host: admin-server
+    target_user_name: "{{ admin_username }}"
+    target_key_path: "{{ admin_key_path }}"
+    target_key_name: "id_{{ admin_key_type }}"
+    target_key_type: "{{ admin_key_type }}"
+    target_key_comment: "{{ admin_username }}@{{ admin_host }}.{{ domain_name }}"
+    target_key_from: "{{ hostvars['admin-server'].ansible_default_ipv4.address }}"
+    target_key_size: 
+    target_key_passphrase: 
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "system/user/user-ssh-keygen"
+    - role: "system/user/user-get-public-key"
+    - role: "system/user/user-put-public-key"
+

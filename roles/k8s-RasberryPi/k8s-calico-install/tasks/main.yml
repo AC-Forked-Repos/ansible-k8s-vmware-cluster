@@ -1,0 +1,18 @@
+---
+# tasks file for kubernetes-calico
+
+- name: "Temporary directory creation"
+  file:
+    path: "/tmp/{{ inventory_hostname }}"
+    state: directory
+
+- name: "Download the Calico networking manifest for the Kubernetes API datastore"
+  get_url:
+    url: https://docs.projectcalico.org/manifests/calico.yaml 
+    dest: "/tmp/{{ inventory_hostname }}/calico.yaml"
+
+- name: "Apply Calico the manifest"
+  shell: kubectl apply -f "/tmp/{{ inventory_hostname }}/calico.yaml"
+
+
+

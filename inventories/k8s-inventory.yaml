@@ -1,0 +1,22 @@
+all:
+  children:
+    ungrouped:
+      hosts:
+        k8s-admin:
+    haproxy:
+      hosts:
+        k8s-haproxy:
+    masters:
+      hosts:
+        k8s-master-[01:03]: 
+    workers:
+      hosts:
+        k8s-worker-[01:03]: 
+    nodes:
+      children:
+        masters:
+        workers:
+    cluster:
+      children:
+        haproxy:
+        nodes:

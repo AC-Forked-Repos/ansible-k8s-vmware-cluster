@@ -1,0 +1,59 @@
+---
+# Share drive with NFS Playbook
+
+
+- name: "NFS server install"
+  hosts: [nfs_servers]      
+  vars:
+    nfs_device: "/dev/sdb1"
+    nfs_srv_folder: "/srv"
+    nfs_export_folder: "/export"
+    nfs_mount_options: "rw"
+    nfs_network: "10.1.55.0/24"
+  become: yes
+  gather_facts: true
+  roles:
+#    - role: "system/update"
+#    - role: "system/common-packages"
+#    - role: "nfs/nfs-server-install"
+
+- name: "Add /export/shared folder"
+  hosts: [nfs_servers]      
+  vars:
+    nfs_export_folder: "/export/shared"
+    nfs_export_owner: "nobody"
+    nfs_export_group: "nogroup"
+    nfs_export_mode: "0777"
+    nfs_export_clients: "10.1.55.0/24"
+    nfs_export_options: "rw,wdelay,root_squash,all_squash,no_subtree_check,sec=sys,rw,secure,all_squash"
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "nfs/nfs-server-add"
+
+- name: "Add /export/kubernetes folder"
+  hosts: [nfs_servers]      
+  vars:
+    nfs_export_folder: "/export/kubernetes"
+    nfs_export_owner: "nobody"
+    nfs_export_group: "nogroup"
+    nfs_export_mode: "0777"
+    nfs_export_clients: "10.1.55.0/24"
+    nfs_export_options: "rw,wdelay,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash"
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "nfs/nfs-server-add"
+
+- name: "NFS client install"
+  hosts: [admin-server,nodes]
+  vars:
+    nfs_server_ip: 10.1.55.201
+    nfs_server_shared: /export/shared
+    nfs_client_opts: rw,sync,hard,intr,_netdev
+    nfs_client_dest_directory: /mnt/network
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/update"
+    - role: "nfs/nfs-client"

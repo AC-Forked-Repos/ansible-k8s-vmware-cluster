@@ -1,0 +1,22 @@
+---
+# tasks file for Docker repository install
+
+- name: "Testing installed Docker"
+  stat:
+    path: /usr/bin/docker
+  register: docker_exist
+  ignore_errors: True
+
+- name: "Add Docker GPG apt key"
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  when: docker_exist.stat.exists == False
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+    filename: docker
+    update_cache: yes
+  when: docker_exist.stat.exists == False

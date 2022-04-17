@@ -1,0 +1,50 @@
+---
+# Create ansible user Playbook
+# 
+# ansible-playbook -K --extra-vars "ansible_user=#### ansible_password=####" playbooks/user-ansible-create.yml
+# replace #### with your own infra user
+
+- name: "Get user password hash and public key"
+  hosts: [admin-server]
+  vars:
+    target_host: admin-server
+    target_user_name: "{{ admin_username }}"
+    target_key_path: "{{ admin_key_path }}"
+    target_key_name: "id_{{ admin_key_type }}"
+    target_key_type: "{{ admin_key_type }}"
+    target_key_comment: "{{ admin_username }}@{{ admin_hostname }}.{{ domain_name }}"
+    target_key_from: "{{ hostvars['admin-server'].ansible_default_ipv4.address }}"
+    target_key_size: 
+    target_key_passphrase: 
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "system/user/user-get-password-hash"
+    - role: "system/user/user-get-public-key"
+
+- name: "Create ansible user on all server"
+  hosts:  [managed]
+  vars:
+    target_user_name: "{{ admin_username }}"
+    target_user_password: "{{ hostvars['admin-server']['target_user_password'] }}"
+    target_user_comment: "{{ admin_description }}"
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "system/user/user-create"
+
+- name: "Copy public key on all server"
+  hosts:  [admin-server,managed]
+  vars:
+    target_user_name: "{{ admin_username }}"
+    target_key_path: "{{ admin_key_path }}"
+    target_key_name: "id_{{ admin_key_type }}"
+    target_key_from: "{{ hostvars['admin-server'].ansible_default_ipv4.address }}"
+    target_public_key: "{{ hostvars['admin-server']['target_public_key'] }}"
+    target_key_comment: "{{ admin_username }}@{{ admin_hostname }}.{{ domain_name }}"
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "system/user/user-put-public-key"
+    - role: "system/user/user-sudoer-add"
+

@@ -1,0 +1,8 @@
+---
+# Update /etc/hostname Playbook
+- name: "Update /etc/hostname"
+  hosts: cluster
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/set-hostname"

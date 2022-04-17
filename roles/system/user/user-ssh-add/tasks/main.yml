@@ -1,0 +1,7 @@
+---
+# tasks file to add ssh key
+
+- name: "Add {{ target_key_path }}/{{ target_key_name }} to ssh agent"
+  shell: |
+    eval "$(ssh-agent)"
+    ssh-add "{{ target_key_path }}/{{ target_key_name }}"

@@ -1,0 +1,12 @@
+---
+# tasks file to get public key content from user 
+- name: "Get {{ target_user_name }} public key on {{ admin_host }}"
+  register: target_public_key
+  raw: cat "{{ target_key_path }}"/"{{ target_key_name }}.pub"
+  when: inventory_hostname == target_host
+
+- name: "Record fact"
+  set_fact:
+    target_public_key: "{{ target_public_key.stdout | regex_replace('[\\r\\n\\t]+','')}}"
+  when: inventory_hostname == target_host
+

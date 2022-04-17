@@ -1,0 +1,34 @@
+---
+# Install tools to manage k8s cluster
+
+- name: "Install Kubernetes cli packages"
+  package:
+    name: kubectl
+    state: latest
+
+- name: "Create {{ kubernetes_user }} .kube folder"
+  file:
+    path: "/home/{{ kubernetes_user }}/.kube"
+    state: directory
+    owner: "{{ kubernetes_user }}"
+    group: "{{ kubernetes_user }}" 
+    mode: '0755'
+
+- name: "Copy admin.conf to {{ kubernetes_user }} .kube folder"
+  copy:
+    src: "/tmp/{{ kubernetes_first_master_dns }}/admin.conf"
+    dest: "/home/{{ kubernetes_user }}/.kube/config"
+    owner: "{{ kubernetes_user }}"
+    group: "{{ kubernetes_user }}" 
+    remote_src: yes
+    force: yes
+
+- name: "Install completion package"
+  package:
+    name: bash-completion
+    state: latest
+
+- name: "Configure completion in .bashrc"
+  lineinfile:
+    path: "/home/{{ kubernetes_user }}/.bashrc"
+    line: source <(kubectl completion bash)

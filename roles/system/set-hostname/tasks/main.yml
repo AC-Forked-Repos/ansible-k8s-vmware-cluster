@@ -1,0 +1,6 @@
+---
+# tasks file to set hostname
+- name: "Set server hostname to {{ inventory_hostname }}"
+  hostname:
+    name: "{{ inventory_hostname }}.{{ domain_name }}"
+    use: systemd

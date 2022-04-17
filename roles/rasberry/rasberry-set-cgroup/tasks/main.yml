@@ -1,0 +1,24 @@
+---
+# tasks file to set cgroup on Rasberry for Docker
+
+- name: "Set cgroup configuration on {{ cmdline_path }}"
+  shell: 
+    cat "{{ cmdline_path }}"
+  register: cmdline_args
+
+- set_fact: new_cmdline="{{ cmdline_args.stdout }}"
+
+- name: "Build new cmdline"
+  set_fact: new_cmdline="{{ new_cmdline + item.value }}"
+  when: 'item.arg not in cmdline_args.stdout'
+  loop:
+    - { arg: 'cpuset', value: ' cgroup_enable=cpuset' }
+    - { arg: 'memory', value: ' cgroup_enable=memory' }
+    - { arg: 'cgroup_memory', value: ' cgroup_memory=1' }
+    - { arg: 'swapaccount', value: ' swapaccount=1' }
+
+- name: "Update cmdline.txt"
+  lineinfile:
+    path: "{{ cmdline_path }}"
+    regexp: "{{ cmdline_args.stdout }}"
+    line: "{{ new_cmdline }}"

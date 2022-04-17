@@ -1,0 +1,81 @@
+---
+# tasks file for kubernetes-masters-setup
+
+########################################################################## INIT
+- name: "Start kubelet service"
+  systemd:
+    state: started
+    daemon_reload: yes
+    name: kubelet
+    enabled: yes
+
+- name: "Reset kubeadm if present"
+  shell: kubeadm reset -f
+  register: kubeadm_reset
+
+
+- name: "Ensure that PKI folder exist"
+  file:
+    path: "/etc/kubernetes/pki/etcd"
+    state: directory
+
+#################################################################### COPY CERTS
+- name: "Copy ETCD PKI to {{ inventory_hostname }}"
+  ansible.builtin.copy:
+    src: "/tmp/{{ inventory_hostname }}/pki/{{ item }}"
+    dest: "/etc/kubernetes/pki/{{ item }}"
+  with_items:
+    - "etcd/ca.crt"
+    - "apiserver-etcd-client.crt"
+    - "apiserver-etcd-client.key"
+
+- name: "Generate kubeadm-config.yml"
+  template:
+    src: kubeadm-config.j2
+    dest: /etc/kubernetes/kubeadm-config.yml
+
+
+################################################################### MASTER INIT
+- name: "Setup kubeadm for first master"
+  command: 
+    cmd: kubeadm init --config=/etc/kubernetes/kubeadm-config.yml
+    creates: /etc/kubernetes/kubelet.conf
+  register: result
+  ignore_errors: yes
+
+- name: "Store kubeadm init output"
+  copy:
+    content: "{{ result.stdout }}"
+    dest: "/etc/kubernetes/kubeadm-init.stdout"
+
+################################################################# START SERVICE
+- name: "Enable kubelet service"
+  ansible.builtin.systemd:
+    name: kubelet 
+    state: started
+    daemon_reload: yes
+    masked: no
+    enabled: yes
+
+################################################################### FETCH CERTS
+- name: "Fetching Kubernetes Master PKI files for other nodes"
+  fetch:
+    src: "/etc/kubernetes/pki/{{ item }}"
+    dest: "/tmp/{{ inventory_hostname }}/pki/{{ item }}"
+    flat: yes
+  with_items:
+    - ca.crt
+    - ca.key
+    - sa.pub
+    - sa.key
+    - front-proxy-ca.crt
+    - front-proxy-ca.key
+    - etcd/ca.crt
+    - apiserver-etcd-client.crt
+    - apiserver-etcd-client.key
+
+- name: "Fetching Kubernetes admin configuration file for admin"
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "/tmp/{{ inventory_hostname }}/admin.conf"
+    flat: yes

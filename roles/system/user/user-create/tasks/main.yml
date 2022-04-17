@@ -1,0 +1,11 @@
+---
+# tasks file for user-create
+- name: "Create user {{ target_user_name }}"
+  user:
+    name: "{{ target_user_name }}"
+    password: "{{ target_user_password }}"
+    comment: "{{ target_user_comment }}"
+    shell: /bin/bash
+    system: yes
+    createhome: yes 
+  

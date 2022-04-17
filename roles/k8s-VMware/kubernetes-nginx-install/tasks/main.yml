@@ -1,0 +1,115 @@
+---
+# Install NGINX ingress controller
+
+
+#- name: "Clone NGINX repository"
+#  git:
+#    repo: https://github.com/nginxinc/kubernetes-ingress.git
+#    dest: /etc/kubernetes-ingress
+#    version: v2.0.0
+#    force: yes
+#  become: true
+#  become_user: root
+
+# Configure RBAC
+- name: "Create a namespace and a service account for the Ingress controller"
+  command:
+    cmd: kubectl apply -f common/ns-and-sa.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+  
+- name: "Create a cluster role and cluster role binding for the service account"
+  command: 
+    cmd: kubectl apply -f rbac/rbac.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+- name: "(App Protect only) Create the App Protect role and role binding"
+  command: 
+    cmd: kubectl apply -f rbac/ap-rbac.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+
+- name: "Create a secret with a TLS certificate and a key for the default server in NGINX"
+  command:
+    cmd: kubectl apply -f common/default-server-secret.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+- name: "Create a config map for customizing NGINX configuration"
+  command: 
+    cmd: kubectl apply -f common/nginx-config.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+# If you would like to set the Ingress Controller as the default one, uncomment
+# the annotation ingressclass.kubernetes.io/is-default-class. With this 
+# annotation set to true all the new Ingresses without an ingressClassName 
+# field specified will be assigned this IngressClass.
+- name: "Uncomment annotations in ingress-class.yaml"
+  lineinfile:
+    path: /etc/kubernetes-ingress/deployments/common/ingress-class.yaml
+    regexp: '^(.*)annotations:(.*)$'
+    line: '  annotations:'
+  become: true
+  become_user: root
+
+- name: "Uncomment ingressclass.kubernetes.io in ingress-class.yaml"
+  lineinfile:
+    path: /etc/kubernetes-ingress/deployments/common/ingress-class.yaml
+    regexp: '(.*)ingressclass.kubernetes.io(.*)$'
+    line: '    ingressclass.kubernetes.io/is-default-class: "true"'
+  become: true
+  become_user: root
+
+- name: "Create an IngressClass resource"
+  command:
+    cmd: kubectl apply -f common/ingress-class.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+# Create Custom Resources
+- name: "Create custom resource definitions for VirtualServer resources"
+  command:
+    cmd: kubectl apply -f common/crds/k8s.nginx.org_virtualservers.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+- name: "Create custom resource definitions for VirtualServerRoute resources"
+  command:
+    cmd: kubectl apply -f common/crds/k8s.nginx.org_virtualserverroutes.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+- name: "Create custom resource definitions for TransportServer resources"
+  command:
+    cmd: kubectl apply -f common/crds/k8s.nginx.org_transportservers.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+- name: "Create custom resource definitions for Policy resources"
+  command:
+    cmd: kubectl apply -f common/crds/k8s.nginx.org_policies.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+- name: "Create a custom resource definition for GlobalConfiguration resource"
+  command:
+    cmd: kubectl apply -f common/crds/k8s.nginx.org_globalconfigurations.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+
+# Deploy the Ingress Controller as DaemonSet
+- name: "Run the Ingress Controller as daemon set"
+  command: 
+    cmd: kubectl apply -f daemon-set/nginx-ingress.yaml
+    chdir: /etc/kubernetes-ingress/deployments 
+
+# Deploy the Ingress Controller as Deployment
+#- name: "Run the Ingress Controller as deployment"
+#  command: 
+#    cmd: kubectl apply -f deployment/nginx-ingress.yaml
+#    chdir: /etc/kubernetes-ingress/deployments 
+#  become: yes
+#  become_user: "{{ kubernetes_user }}" 
+
+
+#- name: "Create a Service for the Ingress Controller Pods"
+#  command:
+#    cmd: kubectl create -f service/nodeport.yaml
+#    chdir: /etc/kubernetes-ingress/deployments 
+#  become: yes
+#  become_user: "{{ kubernetes_user }}" 
+
+

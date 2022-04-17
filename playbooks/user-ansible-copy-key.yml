@@ -1,0 +1,18 @@
+---
+# Create ansible user Playbook
+
+- name: "Copy public key on all server"
+  hosts:  [admin-server,managed]
+  vars:
+    target_host: admin-server
+    target_user_name: "{{ admin_username }}"
+    target_key_path: "{{ admin_key_path }}"
+    target_key_name: "id_{{ admin_key_type }}"
+    target_key_from: "{{ hostvars['admin-server'].ansible_default_ipv4.address }}"
+    target_public_key: "{{ hostvars['admin-server']['target_public_key'] }}"
+    target_key_comment: "{{ admin_username }}@{{ admin_host }}.{{ domain_name }}"
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "system/user/user-get-public-key"
+    - role: "system/user/user-put-public-key"

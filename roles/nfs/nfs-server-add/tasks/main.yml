@@ -1,0 +1,26 @@
+---
+# NFS add share folders
+
+- name: "Ensure {{ nfs_export_folder }} exist"
+  file:
+    path: "{{ nfs_export_folder | default('/export') }}"
+    state: directory
+    owner: "{{ nfs_export_owner | default('root') }}"
+    group: "{{ nfs_export_group | default('root') }}"
+    mode: "{{ nfs_export_mode | default('0700') }}"
+
+- name: "Share {{ nfs_export_folder }} folder to {{ nfs_export_clients }}"
+  lineinfile:
+    path: /etc/exports
+    state: present
+    line: "{{ nfs_export_folder }}	{{ nfs_export_clients }}({{ nfs_export_options | default('ro,sync,root_squash,no_subtree_check')}})"
+
+- name: "Re-export shared drive"
+  command: 
+    exportfs -rav
+
+- name: "Restart NFS service"
+  systemd:
+    name: nfs-server
+    daemon-reload: yes
+    state: started

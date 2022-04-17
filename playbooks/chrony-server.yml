@@ -1,0 +1,24 @@
+---
+# CHRONY server install Playbook
+- name: "CHRONY server install"
+  hosts: admin-server
+  vars:
+    upgrade_type: safe
+    network_timezone: "{{ ntp_network_timezone }}"
+    network_ip_range: "{{ ntp_network_ip_range }}"
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/update"
+    - role: "system/common-packages"
+    - role: "ntp/install-ntp-server"
+
+- name: "Set NTP server for all cluster"
+  hosts: managed 
+  vars:
+    ntp_server_ip: "{{ ntp_host }}"
+    network_timezone: "{{ ntp_network_timezone }}"
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "ntp/set-ntp-server"

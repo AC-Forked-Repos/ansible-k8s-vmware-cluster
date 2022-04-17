@@ -1,0 +1,15 @@
+---
+# Halt cluster and admin server Playbook
+- name: "Halt cluster"
+  hosts: cluster
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "system/halt"
+
+- name: "Halt admin-server"
+  hosts: admin-server
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "system/halt"

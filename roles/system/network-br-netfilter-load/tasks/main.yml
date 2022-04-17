@@ -1,0 +1,31 @@
+---
+
+# tasks file to make sure that the br_netfilter module is loaded to allow iptables to see bridge trafic.
+- name: "Load br_netfilter"
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: "Add br_netfilter in /etc/modules-load.d/k8s.conf"
+  lineinfile:
+    path: /etc/modules-load.d/k8s.conf
+    line: br_netfilter
+    create: yes
+
+- name: "Add bridge-nf-call-iptables in /etc/modules-load.d/k8s.conf"
+  ansible.posix.sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: '1'
+    sysctl_file: /etc/modules-load.d/k8s.conf
+    reload: no
+
+- name: "Add bridge-nf-call-ip6tables in /etc/modules-load.d/k8s.conf"
+  ansible.posix.sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: '1'
+    sysctl_file: /etc/modules-load.d/k8s.conf
+    reload: no
+
+- name: "Reload sysctl"
+  shell: sysctl -p --system
+

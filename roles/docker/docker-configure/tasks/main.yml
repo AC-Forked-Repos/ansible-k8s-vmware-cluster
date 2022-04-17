@@ -1,0 +1,32 @@
+---
+# tasks file for Docker install
+
+- name: "Testing installed Docker"
+  stat:
+    path: /usr/bin/docker
+  register: docker_exist
+  ignore_errors: True
+
+- name: Add user ansible to Docker group
+  user:
+    name: "{{ docker_user }}"
+    groups: docker
+    append: yes
+
+- name: "Configure docker to use systemd as cgroups driver"
+  template:
+    src: daemon.j2
+    dest: /etc/docker/daemon.json
+   
+
+- name: Start Docker 
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+
+
+
+
+

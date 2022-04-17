@@ -1,0 +1,109 @@
+---
+# Kubernetes k8s installation on Rasberry Pi Playbook
+#
+# 3 Masters
+# 3 Workers
+# 1 LB for API and ingress controller
+
+
+############################################################### COMMON PACKAGES
+- name: "Common packages installation"
+  hosts: all
+  vars:
+    upgrade_type: safe
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/update"
+    - role: "system/common-packages"
+    - role: "rasberry/rasberry-remove-swap"
+
+
+###################################################################### HA-PROXY
+- name: "Ha-Proxy installation"
+  hosts: k8s-haproxy
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s/k8s-haproxy-install"
+
+
+######################################################################## DOCKER
+- name: "Docker installation"
+  hosts: nodes
+  vars:
+    cmdline_path: /boot/firmware/cmdline.txt
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "rasberry/rasberry-set-cgroup"
+    - role: "docker/docker-install"
+    - role: "k8s/k8s-bridge-configuration" 
+
+
+##################################################### NODES KUBERNETES PACKAGES
+- name: "Nodes Kubernetes packages installation"
+  hosts: nodes
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-RasberryPi/k8s-add-kubernetes-repository"
+    - role: "k8s-RasberryPi/k8s-common-packages"
+    - role: "k8s-RasberryPi/k8s-nodes-packages"
+
+#################################################################### ETCD SETUP
+- name: "ETCD setup"
+  hosts: [masters]
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-RasberryPi/k8s-etcd-install"
+
+
+################################################################### MASTER INIT
+- name: "First Master setup"
+  hosts: k8s-master-01
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-RasberryPi/k8s-master-init"
+    - role: "k8s-RasberryPi/k8s-calico-install"
+
+
+################################################################## MASTERS JOIN
+- name: "Masters join first Master"
+  hosts: [k8s-master-02, k8s-master-03]
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-RasberryPi/k8s-masters-join"
+
+
+################################################################## WORKERS JOIN
+- name: "Workers join first Master"
+  hosts: [workers]
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-RasberryPi/k8s-workers-join"
+
+
+########################################################################### CLI
+- name: "CLI installation on admin server"
+  hosts: k8s-admin
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-RasberryPi/k8s-add-kubernetes-repository"
+    - role: "k8s-RasberryPi/k8s-common-packages"
+    - role: "k8s-RasberryPi/k8s-admin-packages"
+    - role: "k8s-RasberryPi/k8s-cli-install"
+
+######################################################### CLUSTER CONFIGURATION
+- name: "Cluster configuration"
+  hosts: k8s-admin
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-RasberryPi/k8s-nginx-install"
+    - role: "k8s-RasberryPi/k8s-metallb-install"

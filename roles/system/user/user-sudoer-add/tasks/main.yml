@@ -1,0 +1,8 @@
+---
+# tasks file for user-create
+- name: "Add user {{ target_user_name }} on sudoer file"
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: '^{{ target_user_name }}'
+    line: '{{ target_user_name}} ALL=(ALL) NOPASSWD: ALL'
+    validate: 'visudo -cf %s'

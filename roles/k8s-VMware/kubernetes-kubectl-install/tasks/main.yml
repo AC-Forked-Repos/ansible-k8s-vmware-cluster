@@ -1,0 +1,69 @@
+---
+# Install tools to manage k8s cluster
+
+########################################################################## INIT
+- name: "Remove all old admin.conf"
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/etcd/kubernetes/admin.conf"
+    - "/root/.kube/admin.conf"
+    - "/home/{{ kubernetes_user }}/.kube/admin.conf"
+
+- name: "Assume folders exist"
+  file:
+    path: "/root/.kube"
+    state: directory
+  with_items:
+    - "/etcd/kubernetes"
+    - "/root/.kube"
+    - "/home/{{ kubernetes_user }}/.kube"
+
+
+####################################################################### INSTALL
+- name: "Install Kubernetes packages kubectl"
+  package:
+    name: 'kubectl'
+    state: latest
+    update_cache: true
+
+
+#################################################################### COPY CERTS
+- name: "Copy PKI for root and {{ kubernetes_user }}"
+  copy:
+    src: "/tmp/{{ kubernetes_first_master_hostname }}/admin.conf"
+    dest: "{{ item }}"
+    remote_src: yes
+    force: yes
+  with_items:
+    - "/etc/kubernetes/admin.conf"
+    - "/root/.kube/admin.conf"
+    - "/home/{{ kubernetes_user }}/.kube/admin.conf"
+
+- name: "Change admin.conf ownership, group and permissions for {{ kubernetes_user }}"
+  ansible.builtin.file:
+    path: "/home/{{ kubernetes_user }}/.kube/admin.conf"
+    owner: "{{ kubernetes_user }}"
+    group: "{{ kubernetes_user }}"
+    mode: '0644'
+
+######################################################################## CONFIG
+- name: "Add kubectl configuration in {{ kubernetes_user }} .bashrc"
+  lineinfile:
+    path: "/home/{{ kubernetes_user }}/.bashrc"
+    line: "{{ item }}"  
+  with_items:
+    - "###############################################################################"
+    - "export KUBECONFIG=/home/{{ kubernetes_user }}/.kube/admin.conf"
+
+- name: "Install Kubectl completion package"
+  package:
+    name: bash-completion
+    state: latest
+
+- name: "Configure completion in {{ kubernetes_user }} .bashrc"
+  lineinfile:
+    path: "/home/{{ kubernetes_user }}/.bashrc"
+    line: source <(kubectl completion bash)
+

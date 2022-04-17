@@ -1,0 +1,9 @@
+---
+# NginX Ingress Controller removal Playbook
+
+- name: "Remove NginX installation on cluster"
+  hosts: k8s-admin
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s/k8s-nginx-remove"

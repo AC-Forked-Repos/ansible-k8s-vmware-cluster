@@ -1,0 +1,33 @@
+---
+- name: "Get password hash "
+  hosts: [admin-server]
+  become: yes
+
+  tasks:
+    - raw: cat /etc/shadow | grep ansible | cut -d':' -f2
+      register: target_user_password
+      when: inventory_hostname == admin_host
+
+    - name: "Record fact"
+      set_fact:
+        target_user_password: "{{ target_user_password.stdout | regex_replace('[\\r\\n\\t]+','')}}"
+      when: inventory_hostname == admin_host
+
+- name: "Get password hash "
+  hosts: [k8s-master-01]
+  become: yes
+  become_method: sudo
+  tasks:
+
+    - debug:
+        msg: "Mot de passe : {{ hostvars['admin-server']['target_user_password'] }}"
+
+    - name: "Create user"
+      user:
+        name: ansible
+        password: "{{ hostvars['admin-server']['target_user_password'] }}"
+        comment: "User Ansible"
+        shell: /bin/bash
+        system: yes
+        createhome: yes 
+      when: inventory_hostname == 'k8s-master-01'

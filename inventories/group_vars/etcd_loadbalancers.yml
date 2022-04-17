@@ -1,0 +1,9 @@
+---
+# ETCD load balancer variables
+
+# Ha-Proxy parameters
+haproxy_type: etcd
+
+# Keepalived parameters
+keepalived_auth_pass: puo$6ui43
+keepalived_virtual_ip: "{{ kubernetes_etcd_vip_ip }}"

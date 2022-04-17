@@ -1,0 +1,62 @@
+---
+# Launch ETCD installation
+
+########################################################################## INIT
+- name: "Stop etcd service"
+  ansible.builtin.systemd:
+    name: etcd
+    state: stopped
+
+- name: "Clean old ETCD configuration files"
+  command: rm -rf "{{ item }}"
+  with_items:
+    - "/etc/kubernetes"
+    - "/etc/default/etcd"
+    - "/var/lib/etcd/member"
+
+- name: "Create ETCD pki directory"
+  file:
+    path: "/etc/kubernetes/pki/etcd"
+    state: directory
+
+
+####################################################################### NETWORK
+- name: "Allow all access to tcp port {{ kubernetes_etcd_client_port }} and {{ kubernetes_etcd_peer_port }}"
+  community.general.ufw:
+    rule: allow
+    port: "{{ kubernetes_etcd_client_port }}:{{ kubernetes_etcd_peer_port }}"
+    proto: tcp
+
+
+############################################################## COPY ETCD CONFIG
+- name: "Copy kubeadm-etcd-config.yml to ETCD nodes"
+  ansible.builtin.copy:
+    src: "/tmp/{{ inventory_hostname }}/kubeadm-etcd-config.yml"
+    dest: /etc/kubernetes/kubeadm-etcd-config.yml
+
+- name: "Copy etcd to ETCD nodes"
+  ansible.builtin.copy:
+    src: "/tmp/{{ inventory_hostname }}/etcd"
+    dest: /etc/default/etcd
+
+
+#################################################################### COPY CERTS
+- name: "Copy PKI folder to ETCD nodes"
+  ansible.builtin.copy:
+    src: "/tmp/{{ inventory_hostname }}/pki"
+    dest: /etc/kubernetes/
+
+
+##################################################################### ETCD INIT
+- name: "ETCD init"
+  command: "kubeadm init phase etcd local --config=/etc/kubernetes/kubeadm-etcd-config.yml"
+
+
+################################################################# START SERVICE
+- name: "Enable and restart etcd service"
+  ansible.builtin.systemd:
+    name: etcd
+    state: restarted
+    daemon_reload: yes
+    masked: no
+    enabled: yes

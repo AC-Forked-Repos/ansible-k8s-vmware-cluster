@@ -1,0 +1,97 @@
+---
+# Create kubeadm-etcd-config file for each node
+
+########################################################################## INIT
+- name: "Reset kubeadm if present"
+  shell: kubeadm reset -f
+  register: kubeadm_reset
+
+- name: "Remove temporary directories"
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:  
+    - "{{ groups['etcds'] }}"
+    - "{{ kubernetes_first_master_hostname }}"
+    - "{{ admin_hostname }}"
+
+- name: "Assume destination directory exist"
+  file:
+    path: "/tmp/{{ item }}/"
+    state: directory
+  with_items:  
+    - "{{ groups['etcds'] }}"
+    - "{{ kubernetes_first_master_hostname }}"
+    - "{{ admin_hostname }}"
+
+- name: "Assume kubernetes directory exist"
+  file:
+    path: "/etc/kubernetes/"
+    state: directory
+
+
+####################################################### ETCD_LISTEN_CLIENT_URLS
+- name: "Build ETCD_LISTEN_CLIENT_URLS with TLS"
+  set_fact:
+    listen_client_urls: "{% for item in groups['etcds'] %}https://{{ hostvars[item]['ansible_default_ipv4']['address'] }}:2379,{% endfor %}"
+
+- name: "Format ETCD_LISTEN_CLIENT_URLS"
+  set_fact:
+    etcd_listen_client_urls: "{{ listen_client_urls[:-1] | replace(' ',',') }}"
+
+######################################################### ETCD_LISTEN_PEER_URLS
+- name: "Build ETCD_LISTEN_PEER_URLS with TLS"
+  set_fact:
+    listen_peer_urls: "{% for item in groups['etcds'] %}https://{{ hostvars[item]['ansible_default_ipv4']['address'] }}:2380,{% endfor %}"
+
+- name: "Format ETCD_LISTEN_PEER_URLS"
+  set_fact:
+    etcd_listen_peer_urls: "{{ listen_peer_urls[:-1] | replace(' ',',') }}"
+
+
+########################################################## ETCD_INITIAL_CLUSTER
+- name: "Build ETCD ETCD_INITIAL_CLUSTER with TLS"
+  set_fact:
+    initial_cluster: "{% for item in groups['etcds'] %}etcd{{ item[-3:] }}=https://{{ hostvars[item]['ansible_default_ipv4']['address'] }}:2380,{% endfor %}"
+
+- name: "Format ETCD_INITIAL_CLUSTER"
+  set_fact:
+    etcd_initial_cluster: "{{ initial_cluster[:-1] | replace(' ',',') }}"
+
+
+############################################################### GENERATE CONFIG
+- name: "Generate kubeadm config file with TLS"
+  template:
+    src: kubeadm-etcd-config.j2
+    dest: "/tmp/{{ item }}/kubeadm-etcd-config.yml"
+  vars:
+    etcd_nodename: "{{ item }}"
+    etcd_nodeip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+  with_items: "{{ groups['etcds'] }}"
+
+- name: "Generate etcd with TLS"
+  template:
+    src: etcd.j2
+    dest: "/tmp/{{ item }}/etcd"
+    force: yes
+  vars:
+    etcd_nodename: "{{ item }}"
+    etcd_nodeip: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+  with_items: "{{ groups['etcds'] }}"
+
+
+################################################################### FETCH FILES
+- name: "Fetch etcd config file"
+  ansible.builtin.fetch:
+    src: /tmp/{{ item }}/etcd
+    dest: /tmp/{{ item }}/etcd
+    flat: yes
+  loop: "{{ groups['etcds'] }}"
+
+- name: "Fetch kubeadm-etcd-config.yml"
+  ansible.builtin.fetch:
+    src: /tmp/{{ item }}/kubeadm-etcd-config.yml
+    dest: /tmp/{{ item }}/kubeadm-etcd-config.yml
+    flat: yes
+  loop: "{{ groups['etcds'] }}"
+

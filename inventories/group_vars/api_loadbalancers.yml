@@ -1,0 +1,9 @@
+---
+# API load balancer variables
+
+# Ha-Proxy parameters
+haproxy_type: api
+
+# Keepalived parameters
+keepalived_auth_pass: lcER*943
+keepalived_virtual_ip: "{{ kubernetes_api_vip_ip }}"

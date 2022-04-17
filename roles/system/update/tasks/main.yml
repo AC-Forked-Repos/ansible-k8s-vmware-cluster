@@ -1,0 +1,17 @@
+---
+
+# tasks file for update
+- name: "Reload services"
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: "Remove dependencies that are no longer required"
+  apt:
+    autoremove: yes
+    autoclean: yes
+
+- name: "Update server"
+  apt:
+    upgrade: "{{ upgrade_type | default('no') }}"
+    update_cache: yes
+    cache_valid_time: 86400

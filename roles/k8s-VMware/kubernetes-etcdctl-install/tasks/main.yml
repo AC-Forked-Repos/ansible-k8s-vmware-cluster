@@ -1,0 +1,43 @@
+---
+# Install tools to manage ETCD cluster
+
+
+########################################################################## INIT
+- name: "Assume /etc/kubernetes/pki/etcd folder exist"
+  file:
+    path: "/etc/kubernetes/pki/etcd"
+    state: directory
+
+
+####################################################################### INSTALL
+- name: "Install Kubernetes packages etcd"
+  package:
+    name: 'etcd'
+    state: latest
+    update_cache: true
+
+
+#################################################################### COPY CERTS
+- name: "Copy ETCD PKI"
+  copy:
+    src: "/tmp/{{ kubernetes_first_master_hostname }}/pki/{{ item }}"
+    dest: "/etc/kubernetes/pki/{{ item }}"
+    remote_src: yes
+    force: yes
+  with_items:
+    - "apiserver-etcd-client.key"
+    - "apiserver-etcd-client.crt"
+    - "etcd/ca.crt"
+  
+######################################################################## CONFIG
+- name: "Add etcdctl configuration in .bashrc"
+  lineinfile:
+    path: "/home/{{ kubernetes_user }}/.bashrc"
+    line: "{{ item }}"  
+  with_items:
+    - "###############################################################################"
+    - "export ETCDCTL_API=3"
+    - "export ETCDCTL_ENDPOINTS='https://{{ kubernetes_etcd_vip_hostname }}:{{ kubernetes_etcd_client_port }}'"
+    - "export ETCDCTL_CACERT='/etc/kubernetes/pki/etcd/ca.crt'"
+    - "export ETCDCTL_KEY='/etc/kubernetes/pki/apiserver-etcd-client.key'"
+    - "export ETCDCTL_CERT='/etc/kubernetes/pki/apiserver-etcd-client.crt'"

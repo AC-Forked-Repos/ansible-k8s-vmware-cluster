@@ -1,0 +1,154 @@
+---
+# Kubernetes k8s installation on VMware VM Playbook
+# 
+# 5 Masters
+# 5 ETCD
+# 5 Workers
+# 2 LB with VIP for ETCD Client
+# 2 LB with VIP for API and ingress controller
+
+
+############################################################### COMMON PACKAGES
+- name: "Common packages installation"
+  hosts: cluster
+  vars:
+    upgrade_type: safe
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/update"
+
+
+###################################################################### HA-PROXY
+- name: "Load balancer installation"
+  hosts: loadbalancers
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "haproxy/haproxy-install"
+    - role: "keepalived/keepalived-install"
+
+- name: "Add API load balancer IP to hosts file"
+  hosts: [masters,workers,admin-server]
+  become: yes
+  gather_facts: yes
+  vars:
+    host_ip: "{{ kubernetes_api_vip_ip }}"
+    host_hostname: "{{ kubernetes_api_vip_hostname }}"
+  roles:
+    - role: "system/hosts-add-host"
+
+- name: "Add ETCD load balancer IP to hosts file"
+  hosts: [masters,admin-server]
+  become: yes
+  gather_facts: yes
+  vars:
+    host_ip: "{{ kubernetes_etcd_vip_ip }}"
+    host_hostname: "{{ kubernetes_etcd_vip_hostname }}"
+  roles:
+    - role: "system/hosts-add-host"
+
+
+######################################################################## DOCKER
+- name: "Docker installation"
+  hosts: [nodes]
+  vars:
+    cmdline_path: /boot/firmware/cmdline.txt
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "docker/docker-add-repository"
+    - role: "docker/docker-add-packages"
+    - role: "docker/docker-configure"
+    - role: "system/network-br-netfilter-load"
+
+
+##################################################### NODES KUBERNETES PACKAGES
+- name: "Nodes Kubernetes packages installation"
+  hosts: [nodes]
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "system/swap-disable"
+    - role: "k8s-VMware/kubernetes-add-repository"
+    - role: "k8s-VMware/kubernetes-add-common-packages"
+    - role: "k8s-VMware/kubernetes-add-packages"
+
+
+#################################################################### ETCD SETUP
+- name: "Create PKI from first ETCD member for other nodes"
+  hosts: [k8s-etcd-01]
+  become: yes
+  gather_facts: false
+  roles:
+   - role: "k8s-VMware/kubernetes-etcd-init"
+   - role: "k8s-VMware/kubernetes-generate-ca"
+   - role: "k8s-VMware/kubernetes-etcd-generate-pki"
+
+- name: "Configure ETCD in all nodes"
+  hosts: [etcds]
+  become: yes
+  gather_facts: true
+  roles:
+   - role: "k8s-VMware/kubernetes-etcd-config"
+
+####################################################################### ETCDCTL
+- name: "ETCD CLI installation on admin server"
+  hosts: admin-server
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-VMware/kubernetes-add-repository"
+    - role: "k8s-VMware/kubernetes-add-common-packages"
+    - role: "k8s-VMware/kubernetes-etcdctl-install"
+
+
+############################################################# CONTROLPLANE INIT
+- name: "First Master setup"
+  hosts: k8s-master-01
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-VMware/kubernetes-kubelet-config"
+    - role: "k8s-VMware/kubernetes-controlplane-init"
+    - role: "k8s-VMware/kubernetes-calico-install"
+
+
+####################################################################### KUBECTL
+- name: "Kubernetes CLI installation on admin server"
+  hosts: admin-server
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-VMware/kubernetes-kubectl-install"
+
+
+################################################################## MASTERS JOIN
+- name: "Masters join first Master"
+  hosts: [masters]
+  become: yes
+  gather_facts: false
+  roles:
+    - role: "k8s-VMware/kubernetes-kubelet-config"
+    - role: "k8s-VMware/kubernetes-masters-join"
+
+
+################################################################## WORKERS JOIN
+- name: "Workers join first Master"
+  hosts: [workers]
+  become: yes
+  gather_facts: true
+  roles:
+    - role: "k8s-VMware/kubernetes-workers-join"
+
+
+######################################################### CLUSTER CONFIGURATION
+- name: "Cluster configuration"
+  hosts: admin-server
+  become: yes
+  gather_facts: true
+  environment:
+    KUBECONFIG: /etc/k8s-VMware/admin.conf
+  roles:
+    - role: "k8s-VMware/kubernetes-nginx-install"
+    - role: "k8s-VMware/kubernetes-metallb-install"

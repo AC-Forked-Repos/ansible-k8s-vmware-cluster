@@ -1,0 +1,40 @@
+! Configuration File for keepalived
+
+global_defs {
+        router_id "{{ inventory_hostname }}"
+}
+
+vrrp_script reload_haproxy {
+        script "/usr/bin/killall -0 haproxy"
+        interval 2
+        weight 2
+}
+
+vrrp_instance VI_1 {
+   virtual_router_id 100
+   state {{ 'MASTER' if inventory_hostname[-1:] == '1' else 'BACKUP' }}
+   priority 100
+
+   # Check between LB every second
+   advert_int 1
+
+   # Synchro of connection state between LB
+   lvs_sync_daemon_interface {{ keepalived_interface }}
+   interface {{ keepalived_interface }}
+
+   # LB authentication
+   authentication {
+        auth_type PASS
+        auth_pass {{ keepalived_auth_pass }}
+   }
+
+   # Virtual IP 
+   virtual_ipaddress {
+        {{ keepalived_virtual_ip }}/32 brd {{ keepalived_virtual_broadcast }} scope global
+   }
+
+   track_script { 
+       reload_haproxy 
+   }
+
+}

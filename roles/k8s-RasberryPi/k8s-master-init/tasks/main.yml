@@ -1,0 +1,98 @@
+---
+# tasks file for kubernetes-masters-setup
+
+- name: "Start kubelet service"
+  systemd:
+    state: started
+    daemon_reload: yes
+    name: kubelet
+    enabled: yes
+
+- name: "Reset kubeadm if present"
+  shell: kubeadm reset -f
+  register: kubeadm_reset
+
+- name: "Temporary directory creation"
+  file:
+    path: "/tmp/{{ inventory_hostname }}"
+    state: directory
+
+- name: "Generate kubeadm-config.yml"
+  template:
+    src: kubeadm-config.j2
+    dest: "/tmp/{{ inventory_hostname }}/kubeadm-config.yml"
+
+- name: "Setup kubeadm for first master"
+  command: 
+    cmd: kubeadm init --config=/tmp/"{{ inventory_hostname }}"/kubeadm-config.yml
+    creates: /etc/kubernetes/kubelet.conf
+  register: result
+  ignore_errors: yes
+
+- name: "Store kubeadm init output"
+  copy:
+    content: "{{ result.stdout }}"
+    dest: "/etc/kubernetes/kubeadm-init.stdout"
+
+- name: "Fetching Kubernetes Master PKI files from primary master"
+  fetch:
+    src: "/etc/kubernetes/pki/{{ item }}"
+    dest: "/tmp/{{ inventory_hostname }}/pki/{{ item }}"
+    flat: yes
+  with_items:
+    - ca.crt
+    - ca.key
+    - sa.pub
+    - sa.key
+    - front-proxy-ca.crt
+    - front-proxy-ca.key
+
+- name: "Fetching Kubernetes Master ETCD files from primary master"
+  fetch:
+    src: /etc/kubernetes/pki/etcd/{{ item }}
+    dest: "/tmp/{{ inventory_hostname }}/pki/etcd/{{ item }}"
+    flat: yes
+  with_items:
+    - ca.crt
+    - ca.key
+
+- name: "Fetching Kubernetes Master admin files from primary master"
+  fetch:
+    src: "/etc/kubernetes/{{ item }}"
+    dest: "/tmp/{{ inventory_hostname }}/{{ item }}"
+    flat: yes
+  with_items:
+    - admin.conf
+
+- name: "Create root .kube folder"
+  file:
+    path: "/root/.kube"
+    state: directory
+    owner: "root"
+
+- name: "Copy admin.conf to root .kube folder"
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/root/.kube/config"
+    owner: "root"
+    remote_src: yes
+    force: yes
+
+- name: "Create {{ kubernetes_user }} .kube folder"
+  file:
+    path: "/home/{{ kubernetes_user }}/.kube"
+    state: directory
+    owner: "{{ kubernetes_user }}"
+    group: "{{ kubernetes_user }}" 
+    mode: '0755'
+
+- name: "Copy admin.conf to {{ kubernetes_user }} .kube folder"
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ kubernetes_user }}/.kube/config"
+    owner: "{{ kubernetes_user }}"
+    group: "{{ kubernetes_user }}" 
+    remote_src: yes
+    force: yes
+
+
